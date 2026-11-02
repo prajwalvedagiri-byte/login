@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMate - My Daily To-Do List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #ecfeff 0%, #cffafe 45%, #a5f3fc 100%);
+            color: #134e4a;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 560px;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 15px 40px rgba(13, 148, 136, 0.25);
+            overflow: hidden;
+        }
+
+        /* ---------- Header ---------- */
+        .header {
+            background: linear-gradient(90deg, #0d9488, #0891b2);
+            color: #ffffff;
+            padding: 26px 28px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            margin-top: 6px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* ---------- Input area ---------- */
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 22px 28px 10px;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 13px 14px;
+            font-size: 15px;
+            border: 2px solid #99f6e4;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-area input[type="text"]:focus {
+            border-color: #0d9488;
+        }
+
+        .add-btn {
+            padding: 13px 20px;
+            background: #0d9488;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .add-btn:hover {
+            background: #0f766e;
+        }
+
+        .add-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ---------- Summary ---------- */
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 28px 14px;
+            font-size: 13px;
+            color: #0f766e;
+            font-weight: 600;
+        }
+
+        /* ---------- Task list ---------- */
+        .task-list {
+            list-style: none;
+            padding: 0 28px 24px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 16px;
+            margin-bottom: 10px;
+            background: #f0fdfa;
+            border-left: 5px solid #14b8a6;
+            border-radius: 8px;
+            animation: slideIn 0.25s ease;
+        }
+
+        .task-item.done {
+            border-left-color: #94a3b8;
+            background: #f1f5f9;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 15px;
+            word-break: break-word;
+            cursor: pointer;
+        }
+
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        .remove-btn {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .remove-btn:hover {
+            background: #fecaca;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 30px 10px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>TaskMate</h1>
+            <p>Plan your day, one task at a time</p>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="newTask" placeholder="Type your task here...">
+            <button class="add-btn" id="addBtn">Add Task</button>
+        </div>
+
+        <div class="summary">
+            <span id="totalInfo">Total: 0</span>
+            <span id="doneInfo">Done: 0</span>
+        </div>
+
+        <ul class="task-list" id="taskList"></ul>
+    </div>
+
+    <script>
+        // Array that stores every task
+        var taskArray = [];
+
+        // Grab elements from the page
+        var inputBox  = document.getElementById("newTask");
+        var addButton = document.getElementById("addBtn");
+        var listBox   = document.getElementById("taskList");
+
+        // EVENT HANDLING: click on "Add Task" button
+        addButton.addEventListener("click", handleAdd);
+
+        // EVENT HANDLING: press Enter inside the input box
+        inputBox.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                handleAdd();
+            }
+        });
+
+        // Reads the input, saves it to the array and refreshes the screen
+        function handleAdd() {
+            var value = inputBox.value.trim();
+
+            if (value === "") {
+                alert("Please type a task before adding.");
+                return;
+            }
+
+            taskArray.push({ title: value, finished: false });
+
+            inputBox.value = "";
+            inputBox.focus();
+
+            renderTasks();
+        }
+
+        // Shows ALL tasks from the array on the webpage
+        function renderTasks() {
+            listBox.innerHTML = "";
+
+            if (taskArray.length === 0) {
+                listBox.innerHTML = '<li class="empty-msg">Nothing here yet. Add your first task!</li>';
+            }
+
+            taskArray.forEach(function (item, index) {
+                var row = document.createElement("li");
+                row.className = "task-item" + (item.finished ? " done" : "");
+
+                var label = document.createElement("span");
+                label.className = "task-text";
+                label.textContent = (index + 1) + ". " + item.title;
+                label.title = "Click to mark as done / not done";
+                label.addEventListener("click", function () {
+                    taskArray[index].finished = !taskArray[index].finished;
+                    renderTasks();
+                });
+
+                var removeBtn = document.createElement("button");
+                removeBtn.className = "remove-btn";
+                removeBtn.textContent = "Remove";
+                removeBtn.addEventListener("click", function () {
+                    taskArray.splice(index, 1);
+                    renderTasks();
+                });
+
+                row.appendChild(label);
+                row.appendChild(removeBtn);
+                listBox.appendChild(row);
+            });
+
+            refreshSummary();
+        }
+
+        // Updates the total / done counters
+        function refreshSummary() {
+            var doneCount = taskArray.filter(function (t) { return t.finished; }).length;
+            document.getElementById("totalInfo").textContent = "Total: " + taskArray.length;
+            document.getElementById("doneInfo").textContent  = "Done: " + doneCount;
+        }
+
+        // Show the empty message on first load
+        renderTasks();
+    </script>
+
+</body>
+</html>
